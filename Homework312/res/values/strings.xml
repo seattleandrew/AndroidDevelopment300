@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Homework 311</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="icon_description">Article Icon</string>
+
+    <string name="example_content">The U.S. Patent and Trademark Office has denied Apple\'s bid to trademark the term &quot;iPad Mini,&quot; contending that &quot;mini&quot; is &quot;merely descriptive&quot; of goods or services sold in miniature form. In a letter sent to Apple in January but only recently published, the USPTO reviewer denied Apple\'s application because &quot;the applied-for mark merely describes a feature or characteristic of applicant\'s goods.&quot; Apple can appeal the decision, but to win a reversal the company will need to address the office\'s reasons for denial.
+    </string>
+    <string name="example_title" >Apple application to trademark iPad Mini denied - CNET
+    </string>
+
+    <string name="example_date">Wed, 1 January 2014 20:04:12 GMT
+    </string><string name="title_activity_article">ArticleActivity</string>
+    <color name="grey">#999</color>
+    <string name="placeholder">Lorem Ipsum</string>
+    
+
+</resources>
