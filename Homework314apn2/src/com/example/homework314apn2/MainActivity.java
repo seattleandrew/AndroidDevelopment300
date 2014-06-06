@@ -9,6 +9,9 @@ import java.util.Collection;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -35,12 +38,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends ActionBarActivity implements OnClickListener {
+public class MainActivity extends ActionBarActivity {
 
 	private static final String TAG = MainActivity.class.getSimpleName();
     
     private static String USER_AGENT = "HelloHTTP/1.0";
-	private String weatherUrl = "http://api.openweathermap.org/data/2.5/weather?q=";
+	private static String weatherUrl = "http://api.openweathermap.org/data/2.5/weather?q=";
 	
 	private String forecastUrlPre = "http://api.openweathermap.org/data/2.5/forecast/daily?q=";
 	private String forecastUrlPost = "&cnt=4&mode=json";
@@ -92,7 +95,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
     }
     
     /** An AsycTask used to update the retrieved HTTP header and content displays */
-    private class WeatherAsyncTask extends AsyncTask<String, Void, Void> {
+    public class WeatherAsyncTask extends AsyncTask<String, Void, Void> {
 
         @Override
         protected Void doInBackground(String... urls) {
@@ -103,23 +106,25 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
              
              String urlString = urls[0];
              
-             if (urlString == null) {
+             if (urlString == null || urlString.isEmpty()) {
             	 Log.e(TAG, "No valid URL string provided");
             	 return null;
              }
              
+             Log.i(TAG, "doInBackground|urlString: " + urlString);
+             
              // Make a GET request and execute it to return the response 
-             HttpGet request = new HttpGet(mURLString);
+             HttpGet request = new HttpGet(urlString);
              try {
                  response = mClient.execute(request);
              }
-             catch (IOException e) {
+             catch (Exception e) {
                  e.printStackTrace();
              }
             
             if (response == null) {
-                Log.e(TAG, "Error accessing: " + mURLString);
-                Toast.makeText(mContext, "Error accessing: " + mURLString, Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Error accessing: " + urlString);
+                Toast.makeText(mContext, "Error accessing: " + urlString, Toast.LENGTH_LONG).show();
                 return null;
             }
             
@@ -144,30 +149,32 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
             
             TextView tv = (TextView) findViewById(R.id.textView1);
             
+            
+            Log.i(TAG, "onPostExecute() sb: " + sb.toString());
+            
+            
             if (tv.getText() != "") {                
                 Log.d(TAG, "onPostExecute() Parsing JSON");
                 
-                // Deserialize the JSON content
-                Gson gson = new Gson();
-                try {              
-                    // Get a collection of our type of Book from GSON
-                    Type currentType = new TypeToken<Collection<weather>>(){}.getType();
-                    Collection<weather> current = gson.fromJson(sb.toString(), currentType);
-                    
-                    if (current != null && current.size() > 0) {
-                        
-                        sb.setLength(0); // Reuse the StringBuilder
-                        
-                        for (weather w : current) {
-                            sb.append(w.main); 
-                        }
-
-                    }
-
-                }
-                catch (JsonSyntaxException e) {
-                    Log.e(TAG, e.getMessage());
-                }                
+                try {
+					JSONObject resultObject = new JSONObject(sb.toString());				
+					JSONArray resultArray = resultObject.getJSONArray("weather");
+					JSONObject weatherObject = new JSONObject(resultArray.getString(0));
+					
+					JSONObject mainObject = resultObject.getJSONObject("main");
+					
+					Log.i(TAG, "onPostExecute() mainObject: " + mainObject.toString());
+					
+					String weather_main = weatherObject.getString("main");			
+					String weather_description = weatherObject.getString("description");
+					
+					Log.i(TAG, "onPostExecute() main: " + weather_main + " description: " + weather_description);
+					
+					
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+                   
 
             } 
             else {
@@ -301,57 +308,55 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 
 		if (savedInstanceState == null) {
 			getSupportFragmentManager().beginTransaction()
-					.add(R.id.container, new PlaceholderFragment()).commit();
+					.add(R.id.container, new WeatherFragment()).commit();
 		}
 		
-		mContext = this;
-		findViewById(R.id.button1).setOnClickListener(this);
-		
+		mContext = this;		
 	}
 		
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-
-		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle action bar item clicks here. The action bar will
-		// automatically handle clicks on the Home/Up button, so long
-		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
 			return true;
 		}
+		
 		return super.onOptionsItemSelected(item);
 	}
 
-	/**
-	 * A placeholder fragment containing a simple view.
-	 */
-	public static class PlaceholderFragment extends Fragment {
 
-		public PlaceholderFragment() {
+	public static class WeatherFragment extends Fragment implements OnClickListener {
+
+		public WeatherFragment() {
 		}
 
 		@Override
-		public View onCreateView(LayoutInflater inflater, ViewGroup container,
-				Bundle savedInstanceState) {
-			View rootView = inflater.inflate(R.layout.fragment_main, container,
-					false);
+		public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+			View rootView = inflater.inflate(R.layout.fragment_main, container,	false);
+			
+			rootView.findViewById(R.id.button1).setOnClickListener(this);
+			
 			return rootView;
 		}
-	}
-	@Override
-	public void onClick(View v) {
-		Log.i(TAG, "onClick()");
-		weatherUrl = weatherUrl.concat((((EditText) this.findViewById(R.id.editText1)).getText().toString()));	
-        new WeatherAsyncTask().execute(weatherUrl);
 		
+		@Override
+		public void onClick(View v) {
+			Log.i(TAG, "onClick()");
+			
+			// MTM Need to check EditText for any value			
+			// MTM Probably best to use a String format
+			weatherUrl = weatherUrl.concat((((EditText) this.getView().findViewById(R.id.editText1)).getText().toString()));	
+	        ((MainActivity) this.getActivity()).new WeatherAsyncTask().execute(weatherUrl);
+			
+		}
 	}
+	
 
 }
